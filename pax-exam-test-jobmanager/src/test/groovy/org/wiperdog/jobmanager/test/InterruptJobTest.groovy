@@ -227,4 +227,38 @@ public class InterruptJobTest {
 		assertEquals(true, isInterrupt1)
 		assertEquals(true, isInterrupt2)
 	}
+	
+	/**
+	 * Interrupt running job if job run time > maxruntime of job class (2jobs: job 1 run nomally, job 2 will be interrupted)
+	 * Expected: Waitting job will be interrupted.
+	 */
+	@Test
+	public void interrupt_job_05() throws Exception {
+		String jcname = "class";
+		int concurrency = 1;
+		long maxruntime = 5000;
+		long maxwaittime = 20000;
+		String jobName1 = "jobTest1";
+		String jobName2 = "jobTest2";
+		def jc = jf.createJobClass(jcname, concurrency, maxwaittime, maxruntime);
+		
+		def executable1 = jobExecutableCls.newInstance(jobName1, "class", "sender");
+		def executable2 = jobInteruptCls.newInstance(jobName2, "class", "sender");
+		def jd1 = jf.createJob(executable1);
+		def jd2 = jf.createJob(executable2);
+		
+		jc.addJob(jf.jobKeyForName(jobName1))
+		jc.addJob(jf.jobKeyForName(jobName2))
+		
+		def tr1 = jf.createTrigger(jobName1, 0);
+		def tr2 = jf.createTrigger(jobName2, 100);
+		jf.scheduleJob(jd1, tr1);
+		jf.scheduleJob(jd2, tr2);
+		
+		Thread.currentThread().sleep(15000)
+		def jobStatus2 = executable2.getStatus()
+		def isInterrupt2 = executable2.checkInterrupt()
+		
+		assertEquals(true, isInterrupt2)
+	}
 }
